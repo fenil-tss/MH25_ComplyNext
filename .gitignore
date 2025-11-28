@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Folders
+sebi_pdfs/
+rbi/
+
 # Distribution / packaging
 .Python
 build/
@@ -205,3 +209,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+## Ignore Data files
+*.json
+*.csv
+downloads/
