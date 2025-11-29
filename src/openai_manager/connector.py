@@ -141,6 +141,19 @@ class OPENAI_MANAGER:
             root_logger.error(format_exc())
         return doc_node
 
+    @retry
+    def generate_dynamic_questions(self, user_prompt):
+        response = self.openai_client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": PROMPTS.DYNAMIC_QUESTION_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3
+        )
+        content = response.choices[0].message.content.strip()
+        return content
+    
 
 openai_manager = OPENAI_MANAGER()
 

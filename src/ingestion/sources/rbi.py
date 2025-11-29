@@ -89,13 +89,13 @@ class RBICrawler:
 
                 notifications.append(
                     {
-                        "Source": "RBI",
-                        "Source_url": self.BASE_URL,
+                        "source": "RBI",
+                        "source_url": self.BASE_URL,
                         "Source_Type": "Notification",
-                        "Date": date,
-                        "Title": title,
-                        "Description": description,
-                        "Detail_url": detail_url,
+                        "date": date,
+                        "title": title,
+                        "description": description,
+                        "detail_url": detail_url,
                         "Type": "File" if file_url else "Text",
                         "fileurl": file_url,
                         "filepath": file_path,
@@ -124,7 +124,7 @@ class RBICrawler:
             time.sleep(self.delay)
 
     def save_json(self, notifications):
-        files = [x['fileurl'] for x in map(json.loads, open(self.json_file).readlines())]
+        files = [x['fileurl'] for x in map(json.loads, open(self.json_file, errors="ignore").readlines())]
         with open(self.json_file, "a", encoding="utf-8") as fp:
             for notification in notifications:
                 if notification['fileurl'] in files:

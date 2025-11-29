@@ -87,66 +87,92 @@ class DocChunk(BaseModel):
         Index("idx_doc_chunk_document_id", "document_id"),
     )
 
-# # ----------------------------------------------------------------------
-# # company_profile
-# # ----------------------------------------------------------------------
-# class CompanyProfile(BaseModel):
-#     __tablename__ = 'company_profile'
+# ----------------------------------------------------------------------
+# company_profile
+# ----------------------------------------------------------------------
+class CompanyProfile(BaseModel):
+    __tablename__ = 'company_profile'
 
-#     company_id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, primary_key=True)
 
-#     company_name = Column(Text)
-#     website = Column(Text)
-#     scraped_at = Column(DateTime)
-#     emails = Column(ARRAY(Text), nullable=True)
-#     phones = Column(ARRAY(Text), nullable=True)
-#     about_url = Column(Text)
-#     about_text = Column(Text)
-#     about_embed = Column(BASEVECTOR)
-#     created_at = Column(DateTime, server_default=func.now())
-
-
-# # ----------------------------------------------------------------------
-# # company_product
-# # ----------------------------------------------------------------------
-# class CompanyProduct(BaseModel):
-#     __tablename__ = 'company_product'
-
-#     product_id = Column(Integer, primary_key=True)
-
-#     # Replaced relationship with FK → company_profile.id
-#     company_id = Column(
-#         BigInteger,
-#         ForeignKey('company_profile.id', ondelete="CASCADE"),
-#         nullable=False,
-#         doc="FK referencing company_profile.id"
-#     )
-
-#     product_title = Column(Text)
-#     product_description = Column(Text)
-#     product_url = Column(Text)
-#     product_embed = Column(BASEVECTOR)
-#     created_at = Column(DateTime, server_default=func.now())
-
-#     __table_args__ = (
-#         Index("idx_company_product_company_id", "company_id"),
-#         Index(
-#             "idx_company_product_embedding",
-#             "product_embed",
-#             postgresql_using="ivfflat",
-#             postgresql_ops={"product_embed": "vector_cosine_ops"},
-#         ),
-#     )
+    company_name = Column(Text)
+    website = Column(Text)
+    scraped_at = Column(DateTime)
+    emails = Column(ARRAY(Text), nullable=True)
+    phones = Column(ARRAY(Text), nullable=True)
+    about_url = Column(Text)
+    about_text = Column(Text)
+    about_embed = Column(BASEVECTOR)
+    created_at = Column(DateTime, server_default=func.now())
 
 
-# # ----------------------------------------------------------------------
-# # retrieval_logs
-# # ----------------------------------------------------------------------
-# class RetrievalLogs(BaseModel):
-#     __tablename__ = 'retrieval_logs'
 
-#     id = Column(Integer, primary_key=True)
+# ----------------------------------------------------------------------
+# company_product
+# ----------------------------------------------------------------------
+class CompanyQuestions(BaseModel):
+    __tablename__ = 'company_product'
 
-#     query = Column(Text)
-#     retrieved_chunk_ids = Column(ARRAY(Integer))
-#     created_at = Column(DateTime, server_default=func.now())
+    product_id = Column(Integer, primary_key=True)
+
+    # Replaced relationship with FK → company_profile.id
+    company_id = Column(
+        BigInteger,
+        ForeignKey('company_profile.id', ondelete="CASCADE"),
+        nullable=False,
+        doc="FK referencing company_profile.id"
+    )
+
+    product_title = Column(Text)
+    product_description = Column(Text)
+    product_url = Column(Text)
+    product_embed = Column(BASEVECTOR)
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_company_product_company_id", "company_id"),
+        Index(
+            "idx_company_product_embedding",
+            "product_embed",
+            postgresql_using="ivfflat",
+            postgresql_ops={"product_embed": "vector_cosine_ops"},
+        ),
+    )
+
+# ----------------------------------------------------------------------
+# company_questions
+# ----------------------------------------------------------------------
+class CompanyQuestions(BaseModel):
+    __tablename__ = 'company_questions'
+
+    product_id = Column(Integer, primary_key=True)
+
+    # Replaced relationship with FK → company_profile.id
+    company_id = Column(
+        BigInteger,
+        ForeignKey('company_profile.id', ondelete="CASCADE"),
+        nullable=False,
+        doc="FK referencing company_profile.id"
+    )
+
+    question = Column(Text)
+    answer = Column(Text)
+    options = Column(Text)
+    edited_by = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_company_product_company_id", "company_id"),
+    )
+
+# ----------------------------------------------------------------------
+# retrieval_logs
+# ----------------------------------------------------------------------
+class RetrievalLogs(BaseModel):
+    __tablename__ = 'retrieval_logs'
+
+    id = Column(Integer, primary_key=True)
+
+    query = Column(Text)
+    retrieved_chunk_ids = Column(ARRAY(Integer))
+    created_at = Column(DateTime, server_default=func.now())

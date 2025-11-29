@@ -15,6 +15,21 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+  
+  frontend:
+    container_name: frontend
+    build:
+      context: src
+      dockerfile: frontend.dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pgvector_db
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./src:/app
+    restart: unless-stopped
 
 volumes:
   pgdata:

@@ -60,34 +60,21 @@ def extract_cleaned_content(pdf_path):
     return "\n".join(lines)
 
 
-def get_content_from_files(jsonpath, save_to_local=True):
-    notifications_list = json.loads(open(jsonpath).read())
-    for notification in notifications_list:
-        pdffile = notification["filepath"]
-        resultfile = pdffile.replace(".pdf", ".txt")
-        root_logger.debug(f"Processing pdffile {pdffile}")
-        
-        if os.path.exists(resultfile):
-            raw_text = open(resultfile).read()
-        else:
-            raw_text = extract_cleaned_content(pdffile)
-            if not raw_text:
-                root_logger.error(f"Failed reading document : {pdffile}")
-                continue
+def get_content_from_file(document, save_to_local=True):
+    pdffile = document["filepath"]
+    resultfile = pdffile.replace(".pdf", ".txt")
+    root_logger.debug(f"Processing pdffile {pdffile}")
+    
+    if os.path.exists(resultfile):
+        raw_text = open(resultfile).read()
+    else:
+        raw_text = extract_cleaned_content(pdffile)
+        if not raw_text:
+            root_logger.error(f"Failed reading document : {pdffile}")
+            return {}
 
-            if save_to_local:
-                with open(resultfile, "w") as fp:
-                    fp.write(raw_text)
-            
-        yield {
-            "text": raw_text,            
-            "metadata": {
-                "filepath": pdffile,
-                "source": notification["Source"],
-                "sourceUrl": notification["Detail_url"],
-                "publicationDate": notification["Date"],
-                "articleTitle": notification["Title"],
-                "added_from": notification["File_url"],
-                "added_on": notification["downloaded_on"],
-            }
-        }
+        if save_to_local:
+            with open(resultfile, "w") as fp:
+                fp.write(raw_text)
+        
+    return raw_text

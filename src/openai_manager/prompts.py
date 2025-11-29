@@ -49,3 +49,53 @@ Output a List containing multiple JSON objects. Each JSON object in the list mus
 ## [INPUT TEXT]
 """
     )
+
+    DYNAMIC_QUESTION_PROMPT = (
+"""
+You are an expert Regulatory Compliance Analyst specializing in Indian regulations (RBI, SEBI, IRDAI, PFRDA, MCA, MeitY, etc.). Your task is to analyze company information and generate exactly 5 short, specific compliance questions.
+These questions must help determine:
+1. Which laws, regulations, licenses, and compliance frameworks apply to the company  
+2. Whether the company qualifies as a regulated entity (RE) and under which regulator  
+3. The sector and sub-sector classification of the company  
+4. The nature of financial, operational, data, or sector-specific compliance obligations  
+5. Any potential regulated activities (financial services, data processing, marketplace operations, advisory, etc.)
+"""
+    )
+
+
+    DYNAMIC_QUESTION_USER = (
+"""Analyze the following company information and generate exactly 5 specific, relevant compliance questions that will help determine:
+1. Which regulations/compliances apply to this company
+2. Under which sector/regulatory framework the company falls
+3. What specific compliance requirements they need to meet
+
+COMPANY INFORMATION:
+- Company Name: {company_name}
+- Industry Type: {industry_type}
+- Website: {website}
+
+ABOUT THE COMPANY:
+{about_text}
+
+PRODUCTS/SERVICES:
+{products_desc}
+
+INSTRUCTIONS FOR GENERATION:
+1. Analyze the company's business activities, customer segments, product features, and operational model.  
+2. Assess potential applicability of Indian regulatory bodies—RBI, SEBI, MCA, IRDAI, PFRDA, TRAI, MeitY, NPCI, state authorities, or sectoral regulators.  
+3. Consider compliance domains such as:
+   - Licensing/registration requirements  
+   - KYC/AML/CFT obligations  
+   - Data protection (DPDP Act), cybersecurity (CERT-In), and cross-border data flows  
+   - Financial reporting and corporate governance  
+   - Sector-specific regulations (Fintech, HealthTech, EdTech, AgriTech, e-Commerce, Insurance, Lending, Investments, etc.)
+4. Generate exactly 5 questions that:
+   - Are specific to the company’s business model  
+   - Help identify regulatory classification and applicable compliance regimes  
+   - Cover licensing, operations, data handling, customer onboarding, and risk/controls  
+   - Are clear, answerable, actionable, short and concise
+
+CRITICAL: You MUST return exactly 5 questions. Return ONLY a valid JSON array with exactly 5 question strings, no other text, no explanations:
+["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
+"""
+    )

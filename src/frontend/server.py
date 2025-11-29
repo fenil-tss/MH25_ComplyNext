@@ -1,144 +1,16 @@
-import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-from pathlib import Path
-import pandas as pd
-import sys
-from datetime import datetime
-
-# Get the absolute path to ensure it works regardless of working directory
-frontend_dir = Path(__file__).resolve().parent
-src_dir = frontend_dir.parent
-if str(src_dir) not in sys.path:
-    sys.path.insert(0, str(src_dir))
-if str(frontend_dir) not in sys.path:
-    sys.path.insert(0, str(frontend_dir))
-
-# Import local modules (relative to frontend directory)
-from components.navbar import load_navbar
-from auth import get_authenticator
-
-# Import company scraper (from src directory)
-from ingestion.companies.company import scrape_company
-
-# Import OpenAI client directly (avoiding langchain to prevent typing_extensions issues)
 import os
 import json
-from dotenv import load_dotenv
-from openai import OpenAI
-from config import Config
-load_dotenv()
-
-COMPANY_PROFILE_QUESTION_SET = [
-    {
-        "id": "q1",
-        "text": "Q1. What is your primary regulatory registration/license in India?",
-        "type": "text_with_examples",
-        "examples": [
-            "Scheduled Commercial Bank (e.g., SBI, ICICI, HDFC Bank)",
-            "Small Finance Bank (SFB)"
-        ],
-        "placeholder": "Enter your primary license or registration"
-    },
-    {
-        "id": "q2",
-        "text": "Q2. If you are an NBFC, what is your RBI sub-category? (Skip if not NBFC)",
-        "type": "text_with_examples",
-        "examples": [
-            "Deposit-taking NBFC (NBFC-D)",
-            "Core Investment Company (CIC)"
-        ],
-        "placeholder": "Enter your NBFC sub-category or type N/A"
-    },
-    {
-        "id": "q3",
-        "text": "Q3. Do you hold any of the following operational roles? (Select all that apply)",
-        "type": "multi_checkbox",
-        "options": [
-            "Acquiring bank for merchant payments (e.g., POS, e-commerce)",
-            "Card issuer (credit/debit/prepaid)",
-            "Sponsor bank for Business Correspondents (BCs)",
-            "Agency bank for RBI/government banking",
-            "Currency chest operator",
-            "Member of Cheque Truncation System (CTS)",
-            "Clearing member of CCIL",
-            "None of the above"
-        ]
-    },
-    {
-        "id": "q4",
-        "text": "Q4. Do you or your group engage in any of the following cross-border financial activities? (Select all that apply)",
-        "type": "multi_checkbox",
-        "options": [
-            "Receiving foreign investment (e.g., FDI, FPI, FVCI)",
-            "Making overseas investments (e.g., ODI, JV/WOS abroad)",
-            "Raising external commercial borrowings (ECB) or issuing masala bonds",
-            "Operating a foreign currency (FCY) or NRE/FCNR account in India",
-            "Acting as a Foreign Portfolio Investor (FPI) or sub-account",
-            "Being a Non-Resident Indian (NRI) / OCI investing in India",
-            "Exporting goods/services (and holding EEFC account)",
-            "None of the above"
-        ]
-    },
-    {
-        "id": "q5",
-        "text": "Q5. Which of the following best describes your incorporation/status?",
-        "type": "multi_checkbox",
-        "options": [
-            "Company registered in India (MCA)",
-            "Co-operative society (state-registered)",
-            "Foreign company / branch office in India",
-            "Limited Liability Partnership (LLP)",
-            "Individual / Proprietorship / Partnership firm",
-            "Trust / Society / Section 8 Company",
-            "Others"
-        ]
-    },
-    {
-        "id": "q6",
-        "text": "Q6. Is your company operating in India?",
-        "type": "binary",
-        "options": ["Yes", "No"]
-    },
-    {
-        "id": "q7",
-        "text": "Q7. Do you engage in any of the following activities? (Select all that apply)",
-        "type": "multi_checkbox",
-        "options": [
-            "Accepting public deposits",
-            "Lending (retail, SME, corporate, microfinance)",
-            "Investing in securities (bonds, equities, G-Secs)",
-            "Operating ATMs (not owned by a bank)",
-            "Providing payment services (e.g., wallets, UPI apps, payment gateways)",
-            "Acting as a market-maker in G-Secs / forex",
-            "Holding a Gilt / SGL account with RBI",
-            "None of the above"
-        ]
-    },
-    {
-        "id": "q8",
-        "text": "Q8. If your business is involved in payments, which category best describes your role?",
-        "type": "text_with_examples",
-        "examples": [
-            "Third-Party App Provider (TPAP)",
-            "Payment Instrument Issuer (e.g., PPI wallets, prepaid cards)"
-        ],
-        "placeholder": "Describe your payments role or type N/A"
-    },
-    {
-        "id": "q9",
-        "text": "Q9. How many employees does your organization currently have?",
-        "type": "input",
-        "placeholder": "Enter the current employee count"
-    },
-    {
-        "id": "q10",
-        "text": "Q10. What are the top compliance challenges or pain points you want to address?",
-        "type": "text_area",
-        "placeholder": "Describe your top compliance challenges"
-    }
-]
-
+import yaml
+import pandas as pd
+import streamlit as st
+import streamlit_authenticator as stauth
+from utils import root_logger
+from frontend.auth import get_authenticator
+from frontend.components.navbar import load_navbar
+from frontend.components.questions import COMPANY_PROFILE_QUESTION_SET
+from ingestion.companies.company import scrape_company
+from openai_manager.connector import openai_manager, PROMPTS
+from rag.rag_engine import RAGEngine
 
 def render_company_profile_questionnaire(prefix: str, stored_responses: dict | None = None) -> dict:
     """Render the standardized company profile questionnaire and return responses."""
@@ -228,161 +100,70 @@ def generate_compliance_questions(scraped_data: dict, company_name: str, industr
             for p in products_services[:5]  # Limit to first 5
         ])
     
-    # Create comprehensive prompt for LLM
-    system_prompt = """You are an expert Regulatory Compliance Analyst specializing in Indian regulations (RBI, SEBI, IRDAI, PFRDA, MCA, MeitY, etc.). Your task is to analyze company information and generate exactly 5 short, specific compliance questions.
-    These questions must help determine:
-1. Which laws, regulations, licenses, and compliance frameworks apply to the company  
-2. Whether the company qualifies as a regulated entity (RE) and under which regulator  
-3. The sector and sub-sector classification of the company  
-4. The nature of financial, operational, data, or sector-specific compliance obligations  
-5. Any potential regulated activities (financial services, data processing, marketplace operations, advisory, etc.)"""
-    
-    user_prompt = f"""Analyze the following company information and generate exactly 5 specific, relevant compliance questions that will help determine:
-1. Which regulations/compliances apply to this company
-2. Under which sector/regulatory framework the company falls
-3. What specific compliance requirements they need to meet
+        user_prompt = PROMPTS.DYNAMIC_QUESTION_USER.format(
+            company_name = company_name,
+            industry_type = industry_type,
+            website = website,
+            about_text = about_text[:1000] if about_text else "No about information available",
+            products_desc = products_desc if products_desc else "No products/services information available"
+        )
 
-COMPANY INFORMATION:
-- Company Name: {company_name}
-- Industry Type: {industry_type}
-- Website: {website}
+        
+        content = openai_manager.generate_dynamic_questions(user_prompt)
+        
+        # Try to extract JSON from response
+        # Remove markdown code blocks if present
+        content = content.strip("`")
+        if content.startswith("json"):
+            content = content[4:].strip()
 
-ABOUT THE COMPANY:
-{about_text[:1000] if about_text else "No about information available"}
-
-PRODUCTS/SERVICES:
-{products_desc if products_desc else "No products/services information available"}
-
-INSTRUCTIONS FOR GENERATION:
-1. Analyze the company's business activities, customer segments, product features, and operational model.  
-2. Assess potential applicability of Indian regulatory bodies—RBI, SEBI, MCA, IRDAI, PFRDA, TRAI, MeitY, NPCI, state authorities, or sectoral regulators.  
-3. Consider compliance domains such as:
-   - Licensing/registration requirements  
-   - KYC/AML/CFT obligations  
-   - Data protection (DPDP Act), cybersecurity (CERT-In), and cross-border data flows  
-   - Financial reporting and corporate governance  
-   - Sector-specific regulations (Fintech, HealthTech, EdTech, AgriTech, e-Commerce, Insurance, Lending, Investments, etc.)
-4. Generate exactly 5 questions that:
-   - Are specific to the company’s business model  
-   - Help identify regulatory classification and applicable compliance regimes  
-   - Cover licensing, operations, data handling, customer onboarding, and risk/controls  
-   - Are clear, answerable, actionable, short and concise
-
-CRITICAL: You MUST return exactly 5 questions. Return ONLY a valid JSON array with exactly 5 question strings, no other text, no explanations:
-["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
-"""
-    
-    # Initialize OpenAI client directly (no langchain dependency)
-    openai_client = OpenAI(
-        api_key=Config.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY"),
-        timeout=60,
-        max_retries=3
-    )
-    
-    # Retry logic: Try up to 3 times to get valid questions from GPT
-    max_retries = 3
-    last_error = None
-    
-    for attempt in range(max_retries):
         try:
-            # Call OpenAI API directly
-            response = openai_client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3
-            )
-            
-            content = response.choices[0].message.content.strip()
-            
-            # Try to extract JSON from response
-            # Remove markdown code blocks if present
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
-            
-            # Try to parse as JSON array directly
-            try:
-                questions = json.loads(content)
-            except json.JSONDecodeError:
-                # If direct parse fails, try to extract array from JSON object
-                if content.startswith("{") and "questions" in content.lower():
-                    parsed = json.loads(content)
-                    # Look for questions in various possible keys
-                    for key in ["questions", "question_list", "items", "data"]:
-                        if key in parsed and isinstance(parsed[key], list):
-                            questions = parsed[key]
-                            break
-                    else:
-                        raise ValueError("Could not find questions array in JSON response")
-                else:
-                    raise
-            
+            questions = json.loads(content)
             # Validate we got a list
             if not isinstance(questions, list):
                 raise ValueError(f"Expected a list, got {type(questions)}")
-            
             # Validate we have exactly 5 questions
-            if len(questions) == 5:
-                # Validate all are strings
+            elif len(questions) == 5:
                 if all(isinstance(q, str) and q.strip() for q in questions):
                     return questions
-                else:
-                    raise ValueError("Not all questions are valid strings")
             elif len(questions) > 5:
                 # If GPT gave more than 5, take first 5
                 return [str(q).strip() for q in questions[:5] if str(q).strip()]
             else:
-                # If GPT gave fewer than 5, ask it to generate more
-                if attempt < max_retries - 1:
-                    user_prompt = f"""You previously generated {len(questions)} questions, but I need exactly 5. 
+                raise ValueError("Not all questions are valid strings")
 
-Previous questions: {json.dumps(questions)}
-
-Please generate exactly 5 questions total. Return ONLY a valid JSON array with exactly 5 question strings:
-["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]"""
-                    continue
-                else:
-                    raise ValueError(f"GPT generated only {len(questions)} questions, need exactly 5")
-                    
-        except json.JSONDecodeError as e:
-            last_error = f"JSON parsing error: {str(e)}"
-            if attempt < max_retries - 1:
-                user_prompt = f"""Your previous response was not valid JSON. Please return ONLY a valid JSON array with exactly 5 question strings, no other text:
-["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]"""
-                continue
+        except json.JSONDecodeError:
+            root_logger.error("Could not find questions array in JSON response")
         except Exception as e:
-            last_error = str(e)
-            if attempt < max_retries - 1:
-                continue
+            root_logger(f"Exception occured : {e}")        
     
+
     # If we get here, all retries failed
-    raise Exception(
-        f"Failed to generate compliance questions after {max_retries} attempts. "
-        f"Last error: {last_error}. "
-        f"Please ensure your OpenAI API key is valid and the model is accessible."
+    error_message = (
+        "Failed to generate compliance questions"
+        "Please ensure your OpenAI API key is valid and the model is accessible."
     )
+    root_logger.error(error_message)
+
 
 # ===================== CONFIGURATION =====================
 # Get absolute paths for config and CSS files (relative to frontend directory)
-CONFIG_FILE = frontend_dir / "config.yaml"
-CSS_FILE = frontend_dir / "style.css"
+frontend_dir = os.path.dirname(__file__)
+CONFIG_FILE = os.path.join(frontend_dir, "config.yaml")
+CSS_FILE = os.path.join(frontend_dir, "style.css")
 
 # Load custom CSS (if exists)
-if CSS_FILE.exists():
+if os.path.exists(CSS_FILE):
     with open(CSS_FILE, 'r', encoding='utf-8') as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Load config
-if not CONFIG_FILE.exists():
+if not os.path.exists(CONFIG_FILE):
     st.error("config.yaml not found! Please create it.")
     st.stop()
-
-with open(CONFIG_FILE, 'r', encoding='utf-8') as file:
-    config = yaml.safe_load(file)
+else:
+    with open(CONFIG_FILE, 'r', encoding='utf-8') as file:
+        config = yaml.safe_load(file)
 
 # ===================== INITIALIZE SESSION STATE =====================
 if "authentication_status" not in st.session_state:
@@ -898,6 +679,7 @@ else:
 
     # Load navbar (assuming you have this component)
     load_navbar(page)
+    
 # ============================================================================
 # DASHBOARD PAGE
 # ============================================================================
