@@ -1,0 +1,235 @@
+/* ---------- GLOBAL THEME ---------- */
+:root {
+    --primary-blue: #0052cc;
+    --light-blue: #e6f0ff;
+    --dark-blue: #003d99;
+    --sidebar-width: 280px;
+}
+
+body {
+    background-color: #f7faff !important;
+}
+
+/* ---------- HEADER ---------- */
+.header {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.header h1 {
+    color: var(--primary-blue);
+    font-size: 38px;
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.header h3 {
+    color: #555;
+    margin-top: 0;
+    font-size: 20px;
+}
+
+/* ---------- LOGIN FORM BOX ---------- */
+.stTextInput > div > div > input,
+.stPasswordInput > div > div > input {
+    border-radius: 8px !important;
+    border: 1px solid var(--primary-blue) !important;
+}
+
+.stButton > button {
+    background-color: var(--primary-blue) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    font-size: 16px !important;
+}
+
+.stButton > button:hover {
+    background-color: var(--dark-blue) !important;
+}
+
+/* ---------- SUCCESS BOX ---------- */
+.success-box {
+    background: var(--light-blue);
+    border-left: 4px solid var(--primary-blue);
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+
+.block-container {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+}
+/* Top Navbar */
+/* .top-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(90deg, #0A6EBD, #094a99);
+    padding: 15px 30px;
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    z-index: 9999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+} */
+.main-content {
+    padding-top: 80px !important;
+    
+}
+/* User Avatar Circle */
+.user-avatar {
+    width: 44px;
+    height: 44px;
+    background-color: white;
+    color: #0A6EBD;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    border: 3px solid rgba(255,255,255,0.4);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+/* User Info Section */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+}
+/* Logout Button */
+.logout-link {
+    background: white;
+    color: #0A6EBD !important;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none !important;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.logout-link:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+/* ---------- CENTERED LOGIN CARD ---------- */
+.login-card {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 82, 204, 0.15);
+    border: 1px solid rgba(0, 82, 204, 0.1);
+    max-width: 420px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+/* Make sure inputs and button stretch nicely inside the card */
+.login-card .stTextInput > div > div > input,
+.login-card .stTextInput > div > div > textarea {
+    width: 100% !important;
+}
+
+/* ---------------- Top Navbar ---------------- */
+.menu-icon {
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-right: 20px;
+}
+
+/* ---------------- User Avatar ---------------- */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: white;
+    color: #0A6EBD;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+/* ---------------- Logout Button ---------------- */
+.logout-link {
+    color: white;
+    font-size: 17px;
+    text-decoration: none !important;
+}
+
+.logout-link:hover {
+    opacity: 0.7;
+}
+
+/* --- Keep navbar always on top --- */
+.top-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 50px;
+    left: 0px;
+    width: 100% !important;
+    z-index: 9999 !important;
+    background: linear-gradient(90deg, #0A6EBD, #094a99);
+    padding: 15px 25px;
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+    transition: margin-left 0.3s ease;
+}
+
+/* Make sure main content starts below navbar */
+.main-content {
+    padding-top: 105px !important;   
+}
+
+/* --- Shift main content when sidebar opens --- */
+[data-testid="stSidebar"][aria-expanded="true"] + section {
+    margin-left: 280px !important;
+    transition: margin-left 0.3s ease;
+}
+
+[data-testid="stSidebar"][aria-expanded="false"] + section {
+    margin-left: 0 !important;
+    transition: margin-left 0.3s ease;
+}
+
+/* --- Shift NAVBAR when sidebar opens --- */
+[data-testid="stSidebar"][aria-expanded="true"] ~ div .top-navbar {
+    margin-left: 280px !important;
+}
+
+[data-testid="stSidebar"][aria-expanded="false"] ~ div .top-navbar {
+    margin-left: 0 !important;
+}
+
+.st-emotion-cache-4rsbii {
+    padding-right: 5%;
+    padding-left: 5%;
+}
